@@ -21,6 +21,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const handleDelete = (shiftId) => {
+  deleteDoc(doc(db, "cities", shiftId))
+    .then(() => {
+      alert("Shift Deleted!");
+      window.location.reload();
+    })
+    .catch(() => alert("Something Went Worn!"));
+};
+
 async function getShiftsFromFirestore(userId) {
   try {
     // שאילתת המשמרות של המשתמש לפי מזהה המשתמש (UserId)
@@ -28,7 +37,10 @@ async function getShiftsFromFirestore(userId) {
     const querySnapshot = await getDocs(q);
 
     // המרת התוצאות למערך של משמרות
-    const shifts = querySnapshot.docs.map((doc) => doc.data());
+    const shifts = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
     return shifts;
   } catch (error) {
     console.error("Error getting shifts from Firestore:", error);
@@ -77,30 +89,6 @@ function calculateTotalSalary(shifts) {
   });
   return Math.ceil(totalSalary);
 }
-
-// Example usage
-var startTime = "2:10";
-var endTime = "10:10";
-console.log(
-  "Hours between " +
-    startTime +
-    " and " +
-    endTime +
-    ": " +
-    calculateHours(startTime, endTime)
-);
-
-// Example usage
-var startTime = "2:10";
-var endTime = "10:10";
-console.log(
-  "Hours between " +
-    startTime +
-    " and " +
-    endTime +
-    ": " +
-    calculateHours(startTime, endTime)
-);
 
 async function updateTable() {
   // אחזור מזהה המשתמש הנוכחי מתוך LocalStorage

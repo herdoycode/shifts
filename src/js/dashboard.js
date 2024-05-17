@@ -96,4 +96,6 @@ async function updateMetrics() {
   ).innerHTML = `<h1>${highestPayingRole}</h1> <p>התפקיד הכי משתלם: </p>`;
 }
 
-setTimeout(updateMetrics(), 60000);
+updateMetrics();
+
+setTimeout(() => window.location.reload(), 7000);

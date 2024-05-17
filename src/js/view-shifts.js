@@ -6,6 +6,8 @@ import {
   query,
   where,
   getDocs,
+  doc,
+  deleteDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -20,15 +22,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-const handleDelete = (shiftId) => {
-  deleteDoc(doc(db, "cities", shiftId))
-    .then(() => {
-      alert("Shift Deleted!");
-      window.location.reload();
-    })
-    .catch(() => alert("Something Went Worn!"));
-};
 
 async function getShiftsFromFirestore(userId) {
   try {
@@ -115,7 +108,9 @@ async function updateTable() {
             shift.endTime,
             shift.hourlyWage
           )}</td>
-          <td> <button class="btn-delete">Delete</button> </td>
+          <td><button class="btn-delete" onclick="handleDelete('${
+            shift.id
+          }')">Delete</button></td>
       `;
   });
 
@@ -147,3 +142,12 @@ async function getUserIdByEmail(email) {
 document.addEventListener("DOMContentLoaded", () => {
   updateTable(); // עדכון הטבלה בזמן טעינת הדף
 });
+
+window.handleDelete = function (shiftId) {
+  deleteDoc(doc(db, "shifts", shiftId))
+    .then(() => {
+      alert("Shift Deleted!");
+      window.location.reload();
+    })
+    .catch(() => alert("Something Went Worn!"));
+};

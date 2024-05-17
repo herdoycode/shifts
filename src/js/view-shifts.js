@@ -36,6 +36,72 @@ async function getShiftsFromFirestore(userId) {
   }
 }
 
+function calculateHours(startTime, endTime, hourlyWage) {
+  // Parse start time
+  var startParts = startTime.split(":");
+  var startHour = parseInt(startParts[0]);
+  var startMinute = parseInt(startParts[1]);
+
+  // Parse end time
+  var endParts = endTime.split(":");
+  var endHour = parseInt(endParts[0]);
+  var endMinute = parseInt(endParts[1]);
+
+  // Calculate total minutes for start and end time
+  var totalStartMinutes = startHour * 60 + startMinute;
+  var totalEndMinutes = endHour * 60 + endMinute;
+
+  // Calculate the difference in minutes
+  var differenceMinutes = totalEndMinutes - totalStartMinutes;
+
+  // Calculate hours and minutes
+  var hours = Math.floor(differenceMinutes / 60);
+  var minutes = differenceMinutes % 60;
+
+  let totalHours = hours + minutes / 60;
+
+  let salary = totalHours * hourlyWage;
+
+  return Math.ceil(salary);
+}
+
+function calculateTotalSalary(shifts) {
+  let totalSalary = 0;
+
+  shifts.forEach((shift) => {
+    const startTime = new Date(`2000-01-01T${shift.startTime}`);
+    const endTime = new Date(`2000-01-01T${shift.endTime}`);
+    const hoursWorked = (endTime - startTime) / (1000 * 60 * 60); // Convert milliseconds to hours
+    const salaryForShift = Math.ceil(hoursWorked) * shift.hourlyWage;
+    totalSalary += salaryForShift;
+  });
+  return Math.ceil(totalSalary);
+}
+
+// Example usage
+var startTime = "2:10";
+var endTime = "10:10";
+console.log(
+  "Hours between " +
+    startTime +
+    " and " +
+    endTime +
+    ": " +
+    calculateHours(startTime, endTime)
+);
+
+// Example usage
+var startTime = "2:10";
+var endTime = "10:10";
+console.log(
+  "Hours between " +
+    startTime +
+    " and " +
+    endTime +
+    ": " +
+    calculateHours(startTime, endTime)
+);
+
 async function updateTable() {
   // אחזור מזהה המשתמש הנוכחי מתוך LocalStorage
   const userId = localStorage.getItem("userId");
@@ -47,8 +113,6 @@ async function updateTable() {
   const tbody = document.querySelector(".shifts-table tbody");
   tbody.innerHTML = "";
 
-  let totalWages = 0;
-
   shifts.forEach((shift) => {
     const row = tbody.insertRow();
     row.innerHTML = `
@@ -58,15 +122,20 @@ async function updateTable() {
           <td>${shift.hourlyWage}</td>
           <td>${shift.role}</td>
           <td>${shift.branch}</td>
-          <td>${shift.hourlyWage * 3}</td>
+          <td>${calculateHours(
+            shift.startTime,
+            shift.endTime,
+            shift.hourlyWage
+          )}</td>
           <td> <button class="btn-delete">Delete</button> </td>
       `;
-    totalWages += shift.hourlyWage;
   });
 
   // הוספת שורת סיכום לטבלה
   const totalRow = tbody.insertRow();
-  totalRow.innerHTML = `<td colspan="6">סה"כ שכר</td><td>${totalWages}</td>`;
+  totalRow.innerHTML = `<td colspan="6">סה"כ שכר</td><td>${calculateTotalSalary(
+    shifts
+  )}</td>`;
 }
 
 async function getUserIdByEmail(email) {

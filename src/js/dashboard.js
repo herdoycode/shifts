@@ -2,6 +2,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getFirestore,
   collection,
+  query,
+  where,
   getDocs,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -18,10 +20,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-async function getShiftsFromFirestore() {
+async function getShiftsFromFirestore(userId) {
   try {
     // שאילתת המשמרות של המשתמש לפי מזהה המשתמש (UserId)
-    const q = collection(db, "shifts");
+    const q = query(collection(db, "shifts"), where("userId", "==", userId));
     const querySnapshot = await getDocs(q);
 
     // המרת התוצאות למערך של משמרות
@@ -34,18 +36,32 @@ async function getShiftsFromFirestore() {
 }
 
 async function updateMetrics() {
-  const shifts = await getShiftsFromFirestore();
+  const userId = localStorage.getItem("userId");
+  const shifts = await getShiftsFromFirestore(userId);
+  console.log(shifts);
 
-  const totalHourlyWages = shifts.reduce(
-    (total, shift) => total + shift.hourlyWage,
-    0
-  );
+  let totalHourlyWages = 0;
+
+  for (let i = 0; i < shifts.length; i++) {
+    // Add the value of the 'pet' property of each object to the totalPets variable
+    totalHourlyWages += parseInt(shifts[i].hourlyWage);
+  }
   const averageHourlyWage = totalHourlyWages / shifts.length;
 
-  const totalShiftWages = shifts.reduce(
-    (total, shift) => total + shift.shiftWage,
-    0
-  );
+  function calculateTotalSalary(shifts) {
+    let totalSalary = 0;
+
+    shifts.forEach((shift) => {
+      const startTime = new Date(`2000-01-01T${shift.startTime}`);
+      const endTime = new Date(`2000-01-01T${shift.endTime}`);
+      const hoursWorked = (endTime - startTime) / (1000 * 60 * 60); // Convert milliseconds to hours
+      const salaryForShift = Math.ceil(hoursWorked) * shift.hourlyWage;
+      totalSalary += salaryForShift;
+    });
+    return Math.ceil(totalSalary);
+  }
+  const totalShiftWages = calculateTotalSalary(shifts);
+
   const averageShiftWage = totalShiftWages / shifts.length;
 
   const branchesCount = {};
@@ -66,9 +82,7 @@ async function updateMetrics() {
 
   document.getElementById(
     "average-hourly-wage"
-  ).innerHTML = `<h1>${averageHourlyWage.toFixed(
-    2
-  )}</h1> <p>שכר שעתי ממוצע:</p>`;
+  ).innerHTML = `<h1>${averageHourlyWage}</h1> <p>שכר שעתי ממוצע:</p>`;
   document.getElementById(
     "average-shift-wage"
   ).innerHTML = `<h1>${averageShiftWage.toFixed(
